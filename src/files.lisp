@@ -1,6 +1,8 @@
 (defpackage #:cl-telegram-bot/files
-  (:use #:cl))
-(in-package cl-telegram-bot/files)
+  (:use #:cl)
+  (:import-from #:cl-telegram-bot/telegram-call
+		#:def-telegram-call))
+(in-package :cl-telegram-bot/files)
 
 ;; TODO: refactor
 
@@ -31,4 +33,7 @@
          (list
           (cons :file_id file-id))))
     (make-request b "getFile" options)))
+
+(def-telegram-call get-file (file-id)
+  "https://core.telegram.org/bots/api#getfile")
 

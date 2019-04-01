@@ -93,22 +93,59 @@
     (t body)))
 
 
+(defun parse-def-telegram-call (&optional (lambda-list '(a b &key bar)))
+  (multiple-value-bind (regular ignore0 ignore1 keys)
+      (alexandria:parse-ordinary-lambda-list lambda-list :normalize-keyword nil)
+    (declare (ignore ignore0 ignore1))
+    (values regular keys)))
+
 (defmacro def-telegram-call (name args &body body)
   "During the body evaluaction, result of call to API will be available
    as `response'"
   (with-gensyms (opts-var bot-var)
     (let* ((func-name (get-func-name name))
-           (telegram-method-name (get-method-name name))
-           (prepared-args (loop for arg in args
-                                for keyworded-arg = (make-keyword arg)
-                                appending (prepare-arg keyworded-arg))))
-      `(defun ,func-name (,bot-var ,@args)
-         ,(get-docstring body)
-         (let* ((,opts-var (list ,@prepared-args))
-                (response (make-request ,bot-var
-                                        ,telegram-method-name
-                                        ,opts-var)))
-           (declare (ignorable response))
-           ,@(or (without-docstring
-                   body)
-                 '(response)))))))
+           (telegram-method-name (get-method-name name)))
+      ;;separate ARGS into mandatory and optional parameters. optional parameters become keywords
+      (multiple-value-bind (mandatory-args optional-args) (parse-def-telegram-call args)
+	(let ((mandatory-prepared-args
+	       (mapcar
+		(lambda (arg)
+		  (prepare-arg (make-keyword arg)))
+		mandatory-args)))
+
+	  (let* (;;keyword arguments with "-supplied-p" attached
+		 (optional-supplied-p-args
+		  (mapcar
+		   (lambda (arg)
+		     (alexandria:symbolicate arg "-SUPPLIED-P"))
+		   optional-args))
+		 (;;for the lambda-list
+		  optional-args-keywords
+		  (mapcar
+		   (lambda (arg supplied-p-arg)
+		     `(,arg nil ,supplied-p-arg))
+		   optional-args
+		   optional-supplied-p-args))
+		 (;;for building the json list
+		  optional-prepared-args
+		  (mapcar
+		   (lambda (arg supplied-p-arg)
+		     `(when ,supplied-p-arg
+			,(prepare-arg (make-keyword arg))))
+		   optional-args
+		   optional-supplied-p-args)))
+	    
+	    
+	    `(defun ,func-name (,bot-var ,@mandatory-args
+				,@(when optional-args-keywords
+				    `(&key ,@optional-args-keywords)))
+	       ,(get-docstring body)
+	       (let* ((,opts-var (list ,@mandatory-prepared-args
+				       ,@optional-prepared-args))
+		      (response (make-request ,bot-var
+					      ,telegram-method-name
+					      ,opts-var)))
+		 (declare (ignorable response))
+		 ,@(or (without-docstring
+			   body)
+		       '(response))))))))))
