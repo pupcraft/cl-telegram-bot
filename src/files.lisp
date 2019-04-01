@@ -2,7 +2,7 @@
   (:use #:cl)
   (:import-from #:cl-telegram-bot/telegram-call
 		#:def-telegram-call))
-(in-package :cl-telegram-bot/files)
+(in-package cl-telegram-bot/files)
 
 ;; TODO: refactor
 
@@ -11,7 +11,6 @@
      (if (slot-value ,unserialized (find-json-symbol :ok))
          (progn ,@body)
        nil)))
-
 
 (defun download-file (b file-id)
   "Get the  path for a  file from a  file-id (see: get-file)  and then
@@ -25,7 +24,4 @@
                                (uri       (concatenate 'string (file-endpoint b) path))
                                (extension (cl-ppcre:scan-to-strings "\\..*$" path)))
           (dexador:get uri))))))
-
-(def-telegram-call get-file (file-id)
-  "https://core.telegram.org/bots/api#getfile")
 

@@ -26,10 +26,7 @@
            #:on-command))
 (in-package cl-telegram-bot/core)
 
-
-
 (defvar *threads* nil)
-
 
 (defun start-processing (bot &key debug (delay-between-retries 10))
   (when (getf *threads* bot)

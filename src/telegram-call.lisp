@@ -144,6 +144,7 @@
 		 (flet ((add-thing (key value)
 			  (push value ,opts-var)
 			  (push key ,opts-var)))
+		   (declare (ignorable (function add-thing)))
 		   ,@mandatory-prepared-args
 		   ,@optional-prepared-args)
 		 (let ((response (make-request ,bot-var

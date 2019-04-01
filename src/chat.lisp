@@ -75,10 +75,6 @@
             (get-username chat))))
 
 
-(defmethod prepare-arg ((arg (eql :chat)))
-  `(:|chat_id| (get-chat-id
-                ,(ensure-symbol arg))))
-
 
 (def-telegram-call (get-chat-by-id "getChat")
     (chat-id)
@@ -86,15 +82,15 @@
   (make-chat response))
 
 
-(def-telegram-call kick-chat-member (chat user-id until-date)
+(def-telegram-call kick-chat-member (chat-id user-id until-date)
   "https://core.telegram.org/bots/api#kickchatmember")
 
 
-(def-telegram-call unban-chat-member (chat user-id)
+(def-telegram-call unban-chat-member (chat-id user-id)
   "https://core.telegram.org/bots/api#unbanchatmember")
 
 
-(def-telegram-call restrict-chat-member (chat
+(def-telegram-call restrict-chat-member (chat-id
                                          user-id
                                          until-date
                                          can-send-messages
@@ -104,7 +100,7 @@
   "https://core.telegram.org/bots/api#restrictchatmember")
 
 
-(def-telegram-call promote-chat-member (chat
+(def-telegram-call promote-chat-member (chat-id
                                         user-id
                                         can-change-info
                                         can-post-messages
@@ -117,49 +113,49 @@
   "https://core.telegram.org/bots/api#promotechatmember")
 
 
-(def-telegram-call export-chat-invite-link (chat)
+(def-telegram-call export-chat-invite-link (chat-id)
   "https://core.telegram.org/bots/api#exportchatinvitelink")
 
 
-(def-telegram-call set-chat-photo (chat photo)
+(def-telegram-call set-chat-photo (chat-id photo)
   "https://core.telegram.org/bots/api#setchatphoto")
 
 
-(def-telegram-call delete-chat-photo (chat)
+(def-telegram-call delete-chat-photo (chat-id)
   "https://core.telegram.org/bots/api#deletechatphoto")
 
 
-(def-telegram-call set-chat-title (chat title)
+(def-telegram-call set-chat-title (chat-id title)
   "https://core.telegram.org/bots/api#setchattitle")
 
 
-(def-telegram-call set-chat-description (chat description)
+(def-telegram-call set-chat-description (chat-id description)
   "https://core.telegram.org/bots/api#setchatdescription")
 
 
-(def-telegram-call pin-chat-message (chat message-id disable-notification)
+(def-telegram-call pin-chat-message (chat-id message-id disable-notification)
   "https://core.telegram.org/bots/api#pinchatmessage")
 
 
-(def-telegram-call unpin-chat-message (chat)
+(def-telegram-call unpin-chat-message (chat-id)
   "https://core.telegram.org/bots/api#unpinchatmessage")
 
 
-(def-telegram-call leave-chat (chat)
+(def-telegram-call leave-chat (chat-id)
   "https://core.telegram.org/bots/api#leavechat")
 
 
-(def-telegram-call get-chat-administrators (chat)
+(def-telegram-call get-chat-administrators (chat-id)
   "https://core.telegram.org/bots/api#getchatadministrators")
 
 
-(def-telegram-call get-chat-members-count (chat)
+(def-telegram-call get-chat-members-count (chat-id)
   "https://core.telegram.org/bots/api#getchatmemberscount")
 
 
-(def-telegram-call get-chat-member (chat user-id)
+(def-telegram-call get-chat-member (chat-id user-id)
   "https://core.telegram.org/bots/api#getchatmember")
 
 
-(def-telegram-call send-chat-action (chat action)
+(def-telegram-call send-chat-action (chat-id action)
   "https://core.telegram.org/bots/api#sendchataction")
