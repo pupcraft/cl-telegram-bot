@@ -1,22 +1,19 @@
 (defpackage #:cl-telegram-bot/webhooks
   (:use #:cl)
-  (:import-from #:log4cl))
+  (:import-from #:log4cl)
+  (:import-from #:cl-telegram-bot/telegram-call
+                #:def-telegram-call))
 (in-package cl-telegram-bot/webhooks)
 
 ;; TODO: refactor
 
-(defun set-webhook (b url &key certificate max-connections allowed-updates)
-  "https://core.telegram.org/bots/api#setwebhook"
-  (let ((options
-         (list
-          (cons :url url))))
-    (when certificate (nconc options `((:certificate . ,certificate))))
-    (when max-connections (nconc options `((:max_connections . ,max-connections))))
-    (when allowed-updates (nconc options `((:allowed_updates . ,allowed-updates))))
-    (make-request b "setWebhook" options)))
-
-
-(defun get-webhook-info (bot)
+(def-telegram-call
+    set-webhook (url &key certificate max-connections allowed-updates)
+  "https://core.telegram.org/bots/api#setwebhook")
+(def-telegram-call
+    get-webhook-info ()
   "https://core.telegram.org/bots/api#getwebhookinfo"
-  (log:debug "Retriving webhook info")
-  (make-request bot "getWebhookInfo" nil))
+  ;;FIXME::return the webhook info
+  ;;(log:debug "Retriving webhook info")
+  )
+

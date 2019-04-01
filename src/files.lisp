@@ -26,14 +26,6 @@
                                (extension (cl-ppcre:scan-to-strings "\\..*$" path)))
           (dexador:get uri))))))
 
-
-(defun get-file (b file-id)
-  "https://core.telegram.org/bots/api#getfile"
-  (let ((options
-         (list
-          (cons :file_id file-id))))
-    (make-request b "getFile" options)))
-
 (def-telegram-call get-file (file-id)
   "https://core.telegram.org/bots/api#getfile")
 

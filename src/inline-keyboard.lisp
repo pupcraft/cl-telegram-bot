@@ -1,16 +1,11 @@
 (defpackage #:cl-telegram-bot/inline-keyboard
-  (:use #:cl))
+  (:use #:cl)
+  (:import-from #:cl-telegram-bot/telegram-call
+                #:def-telegram-call))
 (in-package cl-telegram-bot/inline-keyboard)
 
 ;; TODO: refactor
 
-(defun answer-callback-query (b callback-query-id &key text show-alert url)
-  "https://core.telegram.org/bots/api#answercallbackquery"
-  (let ((options
-         (list
-          (cons :callback_query_id callback-query-id))))
-    (when text (nconc options `((:text . ,text))))
-    (when show-alert (nconc options `((:show_alert . ,show-alert))))
-    (when url (nconc options `((:url . ,url))))
-    (make-request b "answerCallbackQuery" options)))
+(def-telegram-call answer-callback-query (callback-query-id &key text show-alert url)
+  "https://core.telegram.org/bots/api#answercallbackquery")
 

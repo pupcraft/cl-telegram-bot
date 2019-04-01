@@ -110,7 +110,8 @@
 	(let ((mandatory-prepared-args
 	       (mapcar
 		(lambda (arg)
-		  (prepare-arg (make-keyword arg)))
+		  (destructuring-bind (key value) (prepare-arg (make-keyword arg))
+		    `(add-thing ,key ,value)))
 		mandatory-args)))
 
 	  (let* (;;keyword arguments with "-supplied-p" attached
@@ -131,21 +132,24 @@
 		  (mapcar
 		   (lambda (arg supplied-p-arg)
 		     `(when ,supplied-p-arg
-			,(prepare-arg (make-keyword arg))))
+			,(cons 'add-thing (prepare-arg (make-keyword arg)))))
 		   optional-args
-		   optional-supplied-p-args)))
-	    
+		   optional-supplied-p-args)))	    
 	    
 	    `(defun ,func-name (,bot-var ,@mandatory-args
 				,@(when optional-args-keywords
 				    `(&key ,@optional-args-keywords)))
 	       ,(get-docstring body)
-	       (let* ((,opts-var (list ,@mandatory-prepared-args
-				       ,@optional-prepared-args))
-		      (response (make-request ,bot-var
-					      ,telegram-method-name
-					      ,opts-var)))
-		 (declare (ignorable response))
-		 ,@(or (without-docstring
-			   body)
-		       '(response))))))))))
+	       (let (,opts-var)
+		 (flet ((add-thing (key value)
+			  (push value ,opts-var)
+			  (push key ,opts-var)))
+		   ,@mandatory-prepared-args
+		   ,@optional-prepared-args)
+		 (let ((response (make-request ,bot-var
+						,telegram-method-name
+						,opts-var)))
+		   (declare (ignorable response))
+		   ,@(or (without-docstring
+			     body)
+			 '(response)))))))))))

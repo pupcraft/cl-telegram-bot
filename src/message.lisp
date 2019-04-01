@@ -14,7 +14,7 @@
                 #:bot)
   (:import-from #:serapeum
                 #:defvar-unbound)
-  (:import-from #:cl-telegram-bot/utils
+  (:import-from #:cl-telegram-bot/telegram-call
                 #:def-telegram-call)
   (:export
    #:make-message
@@ -69,30 +69,15 @@
             (get-text message)
             (get-chat message))))
 
-
-(defun send-message (bot chat text &key
-                                     parse-mode
-                                     disable-web-page-preview
-                                     disable-notification
-                                     reply-to-message-id
-                                     reply-markup)
+(def-telegram-call
+    send-message (chat text &key
+		       parse-mode
+		       disable-web-page-preview
+		       disable-notification
+		       reply-to-message-id
+		       reply-markup)
   "https://core.telegram.org/bots/api#sendmessage"
-  (log:debug "Sending message" chat text)
-  (let ((options
-          (append
-           `(:|chat_id| ,(get-chat-id chat)
-              :|text| ,text)
-           (when reply-markup
-             `(:|reply_markup| ,reply-markup))
-           (when parse-mode
-             `(:|parse_mode| ,parse-mode))
-           (when disable-web-page-preview
-             `(:disable_web_page_preview ,disable-web-page-preview))
-           (when disable-notification
-             `(:disable_notification ,disable-notification))
-           (when reply-to-message-id
-             `(:reply_to_message_id ,reply-to-message-id)))))
-    (make-request bot "sendMessage" options)))
+  (log:debug "Sending message" chat text))
 
 ;; TODO: сделать так чтобы def-telegram-call работал c 
 ;; (def-telegram-call send-message (chat text &key
@@ -119,57 +104,25 @@
 
 ;; TODO: refactor
 
-;; (defun forward-message (b chat-id from-chat-id message-id &key disable-notification)
-;;   "https://core.telegram.org/bots/api#forwardmessage"
-;;   (let ((options
-;;          (list
-;;           (cons :chat_id chat-id)
-;;           (cons :from_chat_id from-chat-id)
-;;           (cons :message_id message-id))))
-;;     (when disable-notification (nconc options `((:disable_notification . ,disable-notification))))
-;;     (make-request b "forwardMessage" options)))
+(def-telegram-call
+    forward-message (chat-id from-chat-id message-id &key disable-notification)
+  "https://core.telegram.org/bots/api#forwardmessage")
 
+(def-telegram-call
+    edit-message-text (text &key chat-id message-id inline-message-id parse-mode disable-web-page-preview reply-markup)
+  "https://core.telegram.org/bots/api#editmessagetext")
 
-;; (defun edit-message-text (b text &key chat-id message-id inline-message-id parse-mode disable-web-page-preview reply-markup)
-;;   "https://core.telegram.org/bots/api#editmessagetext"
-;;   (let ((options
-;;          (list
-;;           (cons :text text))))
-;;     (when chat-id (nconc options `((:chat_id . ,chat-id))))
-;;     (when message-id (nconc options `((:message_id . ,message-id))))
-;;     (when inline-message-id (nconc options `((:inline_message_id . ,inline-message-id))))
-;;     (when parse-mode (nconc options `((:parse_mode . ,parse-mode))))
-;;     (when disable-web-page-preview (nconc options `((:disable_web_page_preview . ,disable-web-page-preview))))
-;;     (when reply-markup (nconc options `((:reply_markup . ,reply-markup))))
-;;     (make-request b "editMessageText" options)))
+(def-telegram-call
+    edit-message-caption (&key chat-id message-id inline-message-id caption reply-markup)
+  "https://core.telegram.org/bots/api#editmessagecaption")
 
-;; (defun edit-message-caption (b &key chat-id message-id inline-message-id caption reply-markup)
-;;   "https://core.telegram.org/bots/api#editmessagecaption"
-;;   (let ((options '()))
-;;     (when chat-id (nconc options `((:chat_id . ,chat-id))))
-;;     (when message-id (nconc options `((:message_id . ,message-id))))
-;;     (when inline-message-id (nconc options `((:inline_message_id . ,inline-message-id))))
-;;     (when caption (nconc options `((:caption . ,caption))))
-;;     (when reply-markup (nconc options `((:reply_markup . ,reply-markup))))
-;;     (make-request b "editMessageCaption" options)))
+(def-telegram-call
+    edit-message-reply-markup (&key chat-id message-id inline-message-id reply-markup)
+  "https://core.telegram.org/bots/api#editmessagereplymarkup")
 
-;; (defun edit-message-reply-markup (b &key chat-id message-id inline-message-id reply-markup)
-;;   "https://core.telegram.org/bots/api#editmessagereplymarkup"
-;;   (let ((options '()))
-;;     (when chat-id (nconc options `((:chat_id . ,chat-id))))
-;;     (when message-id (nconc options `((:message_id . ,message-id))))
-;;     (when inline-message-id (nconc options `((:inline_message_id . ,inline-message-id))))
-;;     (when reply-markup (nconc options `((:reply_markup . ,reply-markup))))
-;;     (make-request b "editMessageReplyMarkup" options)))
-
-;; (defun delete-message (b chat-id message-id)
-;;   "https://core.telegram.org/bots/api#deletemessage"
-;;   (let ((options
-;;          (list
-;;           (cons :chat_id chat-id)
-;;           (cons :message_id message-id))))
-;;     (make-request b "deleteMessage" options)))
-
+(def-telegram-call
+     delete-message (chat-id message-id)
+  "https://core.telegram.org/bots/api#deletemessage")
 
 (define-condition reply-immediately ()
   ((text :initarg :text
