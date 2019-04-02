@@ -14,14 +14,8 @@
   ((:module "telegram-thing"
 	    :serial t
 	    :components
-	    ((:file "pipeline")
-	     (:file "bot")
-	     (:file "utils")
-	     (:file "network")
-	     (:file "update")
-	     (:file "core")
+	    ((:file "big")
 	     (:file "telegram-call")
-	     (:file "files")
 	     (:file "bindings")
 	     (:file "telegram")
 	     (:file "telegram-thing")))))
