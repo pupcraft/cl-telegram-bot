@@ -4,26 +4,17 @@
   (:import-from #:bordeaux-threads
                 #:make-thread
                 #:destroy-thread)
-  (:import-from #:log4cl)
   (:import-from #:cl-telegram-bot/update
                 #:process-updates)
   (:import-from #:cl-telegram-bot/bot
                 #:defbot)
-  (:import-from #:cl-telegram-bot/message
-                #:on-message
-                #:reply)
-  (:import-from #:cl-telegram-bot/entities/command
-                #:on-command)
   (:import-from #:trivial-backtrace
                 #:print-backtrace)
   ;; This package exports only essential symbols, needed
   ;; in 80% cases.
   (:export #:defbot
-           #:on-message
-           #:reply
            #:start-processing
-           #:stop-processing
-           #:on-command))
+           #:stop-processing))
 (in-package cl-telegram-bot/core)
 
 (defvar *threads* nil)

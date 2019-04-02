@@ -256,3 +256,20 @@
     (let ((one (consolidate (mapcar 'first things)))
 	  (two (consolidate (mapcar 'second things))))
       (list one two))))
+
+;;text -> json -> jonathan -> lisp objects/regular structs, struct-to-clos
+;;All telegram types are lisp objects with regular naming schemes
+;;all telegram functions take in what look like regular lisp objects and spit out
+;;regular lisp objects
+;;This solid foundation with provide a good platform for telegram
+
+;;functions to start out with:
+;;
+;;getUpdates
+;;sendMessage
+;;deleteMessage
+;;
+;;json/jonathan <-> lisp objects, primarily used when 'serializing' and 'unserializing' for the
+;;telegram web API
+;;lisp objects with constructors
+;;use alists rather than plists for json objects in telegram?

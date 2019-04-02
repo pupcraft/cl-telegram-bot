@@ -1,8 +1,6 @@
 (defpackage #:cl-telegram-bot/update
   (:use #:cl)
   (:import-from #:log4cl)
-  (:import-from #:cl-telegram-bot/message
-                #:make-message)
   (:import-from #:cl-telegram-bot/network
                 #:make-request)
   (:import-from #:cl-telegram-bot/bot
@@ -33,7 +31,7 @@
     (if message-data
         (make-instance 'update
                        :id (getf data :|update_id|)
-                       :payload (make-message message-data)
+                       :payload message-data ;;;FIXME
                        :raw-data data)
         (progn (log:warn "Received not supported update"
                          data)
@@ -51,8 +49,7 @@
                                       :|limit| limit
                                       :|timeout| timeout)
                                 :streamp t
-                                :timeout timeout)))
-    
+                                :timeout timeout)))    
     (let ((updates (mapcar 'make-update results)))
       (when updates
         (let ((max-id (reduce #'max
