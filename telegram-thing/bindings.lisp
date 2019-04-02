@@ -104,7 +104,7 @@
 			  (progn
 			    (push value ,opts-var)
 			    (push key ,opts-var))
-			  (push (cons value key) ,opts-var)))
+			  (push (cons key value) ,opts-var)))
 		   (declare (ignorable (function add-thing)))
 		   ,@mandatory-prepared-args
 		   ,@optional-prepared-args)

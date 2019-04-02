@@ -39,7 +39,7 @@
     :initform nil)))
 
 (defmacro with-locked-bot ((bot) &body body)
-  `(bordeaux-threads:with-recursive-lock-held (bot-lock ,bot)
+  `(bordeaux-threads:with-recursive-lock-held ((bot-lock ,bot))
      ,@body))
 (defmethod print-object ((bot bot) stream)
   (print-unreadable-object

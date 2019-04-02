@@ -1,4 +1,4 @@
-(defsystem telegram-thing
+(asdf:defsystem #:telegram-thing
   :depends-on ("plump"
 	       "utility"
 	       "alexandria"
