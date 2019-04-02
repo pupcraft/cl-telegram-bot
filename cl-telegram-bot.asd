@@ -8,7 +8,12 @@
 	       "dexador"
 	       "log4cl"
 	       "trivial-backtrace"
-	       "cl-strings")
+	       "cl-strings"
+	       "fps-independent-timestep"
+	       "jsown"
+	       "cl-ppcre"
+	       "lparallel"
+	       "local-time")
   :serial t
   :components
   ((:module "telegram-thing"
