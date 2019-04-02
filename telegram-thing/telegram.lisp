@@ -5,53 +5,30 @@
 (in-package #:the-bot)
 (cl-telegram-bot::defbot echo-bot)
 
+(Setf lparallel:*kernel* (lparallel:make-kernel 2))
+(defparameter *channel* (lparallel:make-channel))
 
-(defvar *threads* nil)
+(defparameter *stop* nil)
 
-(defun start-processing (bot &key debug (delay-between-retries 10))
-  (when (getf *threads* bot)
-    (error "Processing already started."))
-
-  (log:info "Starting thread to process updates for" bot)
-  (flet ((continue-processing-if-not-debug (condition)
-           (let ((restart (find-restart 'cl-telegram-bot::continue-processing
-                                        condition)))
-             (when restart
-               (let ((traceback (trivial-backtrace:print-backtrace
-                                 condition :output nil)))
-                 (log:error "Unable to process Telegram updates" traceback))
-               
-               (unless debug
-                 (invoke-restart restart delay-between-retries))))))
-    (setf (getf *threads* bot)
-          (bordeaux-threads:make-thread
-           (lambda ()
-             (handler-bind ((error #'continue-processing-if-not-debug))
-               (process-updates bot)))
-           :name "telegram-bot"))))
-
-
-(defun stop-processing (bot)
-  (when (getf *threads* bot)
-    (log:info "Stopping thread for" bot)
-    
-    (bordeaux-threads:destroy-thread (getf *threads* bot))
-    (setf (getf *threads* bot)
-          nil)))
-
-(defparameter *bot* nil)
 (defun start (token)
-  (stop)
+  (setf *stop* nil)
   (let ((bot (make-echo-bot token)))
-    (setf *bot* bot)
-    (start-processing
-     bot
-     :debug t)))
+    (let ((submitted 0))
+      (loop
+	 (multiple-value-bind (value existsp)
+	     (lparallel:try-receive-result *channel*)
+	   (declare (ignorable value))
+	   (when existsp
+	     (decf submitted))
+	   (when (zerop submitted)
+	     (incf submitted)
+	     (lparallel:submit-task
+	      *channel*
+	      (lambda ()
+		(one-process-iteration bot)))))
+	 (when *stop* (return))))))
 (defun stop ()
-  (unwind-protect
-       (when *bot*
-	 (stop-processing *bot*))
-    (setf *bot* nil)))
+  (setf *stop* t))
 
 ;;;;FIXME::this depends on all the telegram api calls to be lowercase
 (utility:eval-always
@@ -120,18 +97,14 @@
   #+nil
   (cl-telegram-bot:reply text))
 
-(defun json-get (item data)
-  (getf data item))
-
 (defparameter *output* *standard-output*)
 (defparameter *live-chats* nil)
 (defun process-one-update (bot update)
   "By default, just calls `process' on the payload."
   (log:debug "Processing update" update)
-  (let* ((data (cl-telegram-bot::get-raw-data update))
-	 (readable-data (json-untelegramify data)))
+  (let* ((readable-data (json-untelegramify update)))
     (print readable-data *output*)
-    (multiple-value-bind (chatid existsp) (mehfs '(:message :chat)
+    (multiple-value-bind (chatid existsp) (mehfs '("message" "chat")
 						 readable-data)
       ;;chatid is the id of the chat the update is from
       (when existsp
@@ -139,18 +112,21 @@
 	(pushnew chatid *live-chats* :test 'equalp)
 	(cl-telegram-bot/bindings::delete-message
 	 bot
-	 (mehfs '(:message :chat :ID)
+	 (mehfs '("message" "chat" "id")
 		readable-data)
-	 (mehfs '(:message :message_id)
+	 (mehfs '("message" "message_id")
 		readable-data)
 	 )))))
 
-(defun mehf (item place)
-  (let* ((value (load-time-value (gensym)))
-	 (thing (getf place item value)))
-    (if (eq thing value)
-	(values nil nil)
-	(values thing t))))
+(defun mehf (item object)
+  (handler-bind
+      ((simple-error
+	(lambda (c)
+	  (declare (ignorable c))
+	  (return-from mehf (values nil nil)))))
+    (values
+     (jsown:val object item)
+     t)))
 
 (defun mehfs (place-list place)
   (dolist (item place-list)
@@ -163,34 +139,19 @@
 #+nil
 (defun boo ()
   (cl-telegram-bot))
-
-(defun process-updates (bot)
-  "Starts inifinite loop to process updates using long polling."
-  (loop
-     ;;(print "what" *output*)
-     (when (< 1 (length *live-chats*))
-       (error "what the hell? why are there more than one chat?"))
+(defun one-process-iteration (bot)
+  ;;(print "what" *output*)
+  (when (< 1 (length *live-chats*))
+    (error "what the hell? why are there more than one chat?"))
 
      ;;;;This part initiates chats
-     (dolist (chat *live-chats*)
-       (cl-telegram-bot/bindings::send-message
-	bot
-	(getf (json-telegramify chat) :|id|)
-	"sdff"))
+  (dolist (chat *live-chats*)
+    (cl-telegram-bot/bindings::send-message
+     bot
+     (jsown:val chat "id")
+     "sdff"))
 
      ;;;;This part responds to updates
-     (loop for update in (restart-case
-			     (cl-telegram-bot::get-updates bot
-								  :timeout 10)
-			   (cl-telegram-bot::continue-processing (&optional delay)
-			     :report "Continue processing updates from Telegram"
-			     (when delay
-			       (sleep delay))
-			     ;; Return no updates
-			     (values)))
-	do (restart-case
-	       (process-one-update bot update)
-	     (cl-telegram-bot::continue-processing (&optional delay)
-	       :report "Continue processing updates from Telegram"
-	       (when delay
-		 (sleep delay)))))))
+  (dolist (update (cl-telegram-bot::get-updates bot
+						:timeout 10))
+    (process-one-update bot update)))

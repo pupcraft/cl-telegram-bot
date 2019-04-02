@@ -44,9 +44,15 @@
     (concatenate 'string
 		 "https://core.telegram.org/bots/api#"
 		 (remove #\- (string-downcase (symbol-name symbol)))))
-
+  (defun make-json-keyword (arg)
+    (check-type arg symbol)
+    (cl-arrows:-> arg
+		  (symbol-name)
+		  (kebab:to-snake-case)
+		  (alexandria:make-keyword)))
+  
   (defun prepare-arg (arg)
-    `(,(cl-telegram-bot::make-json-keyword arg)
+    `(,(make-json-keyword arg)
        ;; We need to intern symbol into the package which calls our macro
        ,(alexandria:ensure-symbol arg))))
 
@@ -94,14 +100,19 @@
 	       ,(translate-to-telegram-api-doc name)
 	       (let (,opts-var)
 		 (flet ((add-thing (key value)
-			  (push value ,opts-var)
-			  (push key ,opts-var)))
+			  #+nil ;;plist style
+			  (progn
+			    (push value ,opts-var)
+			    (push key ,opts-var))
+			  (push (cons value key) ,opts-var)))
 		   (declare (ignorable (function add-thing)))
 		   ,@mandatory-prepared-args
 		   ,@optional-prepared-args)
-		 (let ((response (cl-telegram-bot::make-request ,bot-var
-								,telegram-method-name
-								,opts-var)))
+		 (push :obj ,opts-var)
+		 (let ((response (cl-telegram-bot::make-request
+				  ,bot-var
+				  ,telegram-method-name
+				  (jonathan:to-json ,opts-var :from :jsown))))
 		   (declare (ignorable response))
 		   response)))))))))
 
