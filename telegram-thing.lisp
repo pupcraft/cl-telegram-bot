@@ -195,7 +195,7 @@
       ;;if they are all the same, there should be one left
       (remove-duplicates
        ;;get the table header
-       (print
+       (print ;;<-This is here, just saying
 	(mapcar 'first
 		;;nil removed
 		(remove nil
@@ -230,3 +230,29 @@
 				     nil))
 			       *nice-types*)))
        :test 'equalp))))
+
+;;(name args description)
+;;args is not :no-parameters
+(defun even-nicer-functions ()
+  (mapcar (lambda (x)
+	    (destructuring-bind (name table-thing description) x
+	      (list name
+		    (etypecase table-thing
+		      ((cons (eql :parameters))
+		       ;;getting the data, tossing the header, which is redundant
+		       ;;and also tossing the label ':parameters
+		       (second (second table-thing)))
+		      ((eql :no-parameters) nil))
+		    description)))
+	  *nice-functions*))
+
+(defun consolidate (x)
+  (remove-duplicates x :test 'equalp))
+(defun functions-types-stuff ()
+  (let ((things
+	 (mapcar 'butlast
+		 (mapcar 'cdr
+			 (apply 'append (mapcar 'second (even-nicer-functions)))))))
+    (let ((one (consolidate (mapcar 'first things)))
+	  (two (consolidate (mapcar 'second things))))
+      (list one two))))
