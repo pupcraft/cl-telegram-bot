@@ -4,27 +4,10 @@
   (:use :cl))
 (in-package #:the-bot)
 (cl-telegram-bot:defbot echo-bot)
-(defmethod cl-telegram-bot:on-message
-    ((bot echo-bot)
-     text)
-  (dostuff bot text))
-(defmethod cl-telegram-bot:on-command
-    ((bot echo-bot)
-     (command (eql :help))
-     text)
-  (declare (ignorable text))
-  (cl-telegram-bot:reply "Just send me any text and I'll reply with the same text."))
-(defmethod cl-telegram-bot:on-command
-    ((bot echo-bot)
-     (command (eql :start))
-     text)
-  (declare (ignorable text))
-  (cl-telegram-bot:reply "Welcome Lisper! Have a fun, playing with cl-telegram-bot!"))
-
 (defparameter *bot* nil)
-(defun start ()
+(defun start (token)
   (stop)
-  (let ((bot (make-echo-bot "707420266:AAEVk0qKas542dxuYAQtiq5N9AoRipVy6LU")))
+  (let ((bot (make-echo-bot token)))
     (setf *bot* bot)
     (cl-telegram-bot:start-processing
      bot
@@ -92,12 +75,14 @@
   `(json-get (j ,thing) ,data))
 
 (defun dostuff (bot text)
+  #+nil
   (cl-telegram-bot/bindings::send-message
    bot
    (cl-telegram-bot/message::get-current-chat)
    "what"
    :reply-markup
    *testcase*)
+  #+nil
   (cl-telegram-bot:reply text))
 
 (defun json-get (item data)
@@ -117,7 +102,7 @@
       (when existsp
 	;;add it to the live chats
 	(pushnew chatid *live-chats* :test 'equalp)
-	(cl-telegram-bot/message::delete-message
+	(cl-telegram-bot/bindings::delete-message
 	 bot
 	 (mehfs '(:message :chat :ID)
 		readable-data)
@@ -155,12 +140,10 @@
 
      ;;;;This part initiates chats
      (dolist (chat *live-chats*)
-       (let ((chat (cl-telegram-bot/chat:make-chat
-		    (json-telegramify chat))))
-	 (cl-telegram-bot/message::send-message
-	  bot
-	  chat
-	  "sdff")))
+       (cl-telegram-bot/bindings::send-message
+	bot
+	(getf (json-telegramify chat) :|id|)
+	"sdff"))
 
      ;;;;This part responds to updates
      (loop for update in (restart-case

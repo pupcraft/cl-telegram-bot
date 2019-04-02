@@ -76,7 +76,7 @@
 	reply-to-message-id reply-markup))
       ;;messages
       (send-message
-       (chat text &key parse-mode disable-web-page-preview disable-notification
+       (chat-id text &key parse-mode disable-web-page-preview disable-notification
 	reply-to-message-id reply-markup))
       (forward-message (chat-id from-chat-id message-id &key disable-notification))
       (edit-message-text
