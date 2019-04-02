@@ -21,9 +21,8 @@
 
 (defun tag-type= (string node)
   (and
-   ;(typep node 'plump:node)
-)
-  (string= string (plump:tag-name node)))
+   (typep node 'plump:node)
+   (string= string (plump:tag-name node))))
 
 (defun separate-h4s (&optional (seq *children-elements*))
   (let ((acc)
@@ -35,26 +34,25 @@
 	     (setf top nil)))
       (loop for node across seq
 	 do (progn
-	      (when (tag-type= "h4" node)
+	      (when (or (tag-type= "h4" node)
+			(tag-type= "h3" node))
 		(new-stack))
 	      (new node))))
     (nreverse acc)))
-(defparameter *data1* (separate-h4s))
-(defparameter *data2* (nthcdr 4 *data1*))
+(defparameter *data1* 
+  (separate-h4s))
+;;The h4 headings seem to contain the data
+(defparameter *data2* (remove-if-not (lambda (x) (tag-type= "h4" (first x)))
+				     *data1*))
 (defun nothing ()
   (mapcar
    (lambda (list0)
      (mapcar (lambda (node)
-	       (cond ((tag-type= "h4" node)
-		      (progn
-			(plump:text
-			 (find-if
-			  (lambda (x)
-			    (plump:text-node-p x))
-			  (plump:children node)))))
-		     ((tag-type= "p" node)
-		      (plump:text
-		       node))
+	       (cond (;;extract the title from the h4 node
+		      (or (tag-type= "h4" node)
+			  (tag-type= "p" node)
+			  (tag-type= "blockquote" node))
+		      (plump:text node))
 		     (t node)))
 	     (remove-if
 	      (lambda (x)
@@ -86,3 +84,101 @@
      list))
 
   (defparameter *data5* (remove-other-things)))
+;;LikeThis
+(defparameter *types*
+  (remove-if-not (lambda (x)
+		   (upper-case-p (aref (first x) 0)))
+		 *data4*))
+;;likeThis
+;;currently containts either nil->no arguments or a single table
+(defparameter *functions*
+  (remove-if-not (lambda (x)
+		   (lower-case-p (aref (first x) 0)))
+		 *data4*))
+
+(defun stringless (list)
+  (mapcar 'data
+	  list))
+
+(defun longest (seq)
+  (find (reduce 'max seq :key 'length) seq :key 'length
+	))
+
+(defun description (item)
+  (nice-concatenate
+   (remove-if-not 'stringp (cdr item))))
+
+(defun data (item) (remove-if 'stringp (cdr item)))
+
+(defun stringfulthing (list)
+  (mapcar 'description
+	  list))
+
+(defun nice-concatenate (list)
+  (with-output-to-string (str)
+    (dolist (item list)
+      (princ item str)
+      (terpri str))))
+
+;;ul vs table tag
+;;exception::
+;;ForceReply
+
+(defun nicer-order-function (&optional (list *functions*))
+  (mapcar (lambda (x)
+	    (list (car x)
+		  (let ((item (first (data x))))
+		    (cond (;;The table indicates the parameters of the function
+			   (tag-type= "table" item)
+			   (list :parameters (convert-table item)))
+			  ((null item) :no-parameters) ;;means no parameters
+			  (t (error "what is this datum? for a function API ~a" item))))
+		  (description x)))
+	  list))
+
+;;;for types
+(defun nicer-order-type (&optional (list *types*))
+  (mapcar (lambda (x)
+	    (list (car x)
+		  (let ((item (first (data x))
+			  ;;FIXME::only coincidentally works? There is ForceReply
+			  ;;That has an ul and a table
+			  ))
+		    (cond (;;The table indicates how the object type is layed out
+			   (tag-type= "table" item)
+			   (list :layout (convert-table item)))
+			  ((null item) :placeholder) ;; a placeholder for types
+			  ((tag-type= "ul" item)
+			   (list :enum (convert-ul item)))
+			  (t (error "what is this datum? for a type API ~a" item))))
+		  (description x)))
+	  list))
+
+(defparameter *table-test* (car (first (stringless *functions*))))
+
+(defun convert-table (&optional (node *table-test*))
+  (mapcar
+   (lambda (node)
+     (mapcar
+      (lambda (node)
+	(mapcar
+	 (lambda (node)	   
+	   (plump:text node))
+	 (coerce
+	  (plump:child-elements node)
+	  'list)))
+      (coerce
+       (plump:child-elements node)
+       'list)))
+   (coerce
+    (plump:child-elements node)
+    'list)))
+
+(defun test678 ()
+  (mapcar 'convert-table (remove nil (mapcar 'first (stringless *functions*)))))
+
+(defun convert-ul (node)
+  (map 'list 'plump:text
+       (plump:child-elements node)))
+
+(defparameter *uls* (mapcar 'first (remove-if (lambda (x) (tag-type= "table" (first x))) (remove nil (stringless *types*)))))
