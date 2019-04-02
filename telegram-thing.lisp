@@ -182,3 +182,25 @@
        (plump:child-elements node)))
 
 (defparameter *uls* (mapcar 'first (remove-if (lambda (x) (tag-type= "table" (first x))) (remove nil (stringless *types*)))))
+
+(defparameter *nice-types* (nicer-order-type))
+(defparameter *nice-functions* (nicer-order-function))
+
+(defun function-parameter-table-uniformity-test ()
+  (= 1
+     (length
+      ;;if they are all the same, there should be one left
+      (remove-duplicates
+       ;;get the table header
+       (mapcar 'first
+	       ;;nil removed
+	       (remove nil
+		       (mapcar (lambda (x)
+				 (if (typep (second x)
+					    ;;HACK::get only those items that have a parameters table,
+					    ;;nil otherwise
+					    '(cons (eql :parameters)))
+				     (second (second x))
+				     nil))
+			       *nice-functions*)))
+       :test 'equalp))))
