@@ -186,7 +186,33 @@
 (defparameter *nice-types* (nicer-order-type))
 (defparameter *nice-functions* (nicer-order-function))
 
+;;The ordering for function parameter tables
+#+nil
+("Parameter" "Type" "Required" "Description")
 (defun function-parameter-table-uniformity-test ()
+  (= 1
+     (length
+      ;;if they are all the same, there should be one left
+      (remove-duplicates
+       ;;get the table header
+       (print
+	(mapcar 'first
+		;;nil removed
+		(remove nil
+			(mapcar (lambda (x)
+				  (if (typep (second x)
+					     ;;HACK::get only those items that have a parameters table,
+					     ;;nil otherwise
+					     '(cons (eql :parameters)))
+				      (second (second x))
+				      nil))
+				*nice-functions*))))
+       :test 'equalp))))
+;;These two formats are only coincidentally the same, so we have two functions
+;;The ordering for type layouts
+#+nil
+("Field" "Type" "Description")
+(defun type-layout-table-uniformity-test ()
   (= 1
      (length
       ;;if they are all the same, there should be one left
@@ -199,8 +225,8 @@
 				 (if (typep (second x)
 					    ;;HACK::get only those items that have a parameters table,
 					    ;;nil otherwise
-					    '(cons (eql :parameters)))
+					    '(cons (eql :layout)))
 				     (second (second x))
 				     nil))
-			       *nice-functions*)))
+			       *nice-types*)))
        :test 'equalp))))
