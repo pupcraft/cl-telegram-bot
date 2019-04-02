@@ -15,7 +15,6 @@
 	    :serial t
 	    :components
 	    ((:file "big")
-	     (:file "telegram-call")
 	     (:file "bindings")
 	     (:file "telegram")
 	     (:file "telegram-thing")))))

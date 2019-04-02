@@ -3,7 +3,7 @@
 (defpackage #:the-bot
   (:use :cl))
 (in-package #:the-bot)
-(cl-telegram-bot:defbot echo-bot)
+(cl-telegram-bot::defbot echo-bot)
 
 
 (defvar *threads* nil)
@@ -14,7 +14,7 @@
 
   (log:info "Starting thread to process updates for" bot)
   (flet ((continue-processing-if-not-debug (condition)
-           (let ((restart (find-restart 'cl-telegram-bot/update::continue-processing
+           (let ((restart (find-restart 'cl-telegram-bot::continue-processing
                                         condition)))
              (when restart
                (let ((traceback (trivial-backtrace:print-backtrace
@@ -27,7 +27,7 @@
           (bordeaux-threads:make-thread
            (lambda ()
              (handler-bind ((error #'continue-processing-if-not-debug))
-               (process-updates bot)))
+               (cl-telegram-bot::process-updates bot)))
            :name "telegram-bot"))))
 
 
@@ -125,10 +125,10 @@
 
 (defparameter *output* *standard-output*)
 (defparameter *live-chats* nil)
-(defmethod cl-telegram-bot/update::process ((bot t) (update cl-telegram-bot/update::update))
+(defmethod cl-telegram-bot::process ((bot t) (update cl-telegram-bot::update))
   "By default, just calls `process' on the payload."
   (log:debug "Processing update" update)
-  (let* ((data (cl-telegram-bot/update:get-raw-data update))
+  (let* ((data (cl-telegram-bot::get-raw-data update))
 	 (readable-data (json-untelegramify data)))
     (print readable-data *output*)
     (multiple-value-bind (chatid existsp) (mehfs '(:message :chat)
@@ -144,8 +144,8 @@
 	 (mehfs '(:message :message_id)
 		readable-data)
 	 ))))
-  (let ((payload (cl-telegram-bot/update::get-payload update)))
-    (cl-telegram-bot/update::process bot payload)))
+  (let ((payload (cl-telegram-bot::get-payload update)))
+    (cl-telegram-bot::process bot payload)))
 
 (defun mehf (item place)
   (let* ((value (load-time-value (gensym)))
@@ -166,7 +166,7 @@
 (defun boo ()
   (cl-telegram-bot))
 
-(defmethod cl-telegram-bot/update:process-updates ((bot t))
+(defmethod cl-telegram-bot::process-updates ((bot t))
   "Starts inifinite loop to process updates using long polling."
   (loop
      ;;(print "what" *output*)
@@ -182,17 +182,17 @@
 
      ;;;;This part responds to updates
      (loop for update in (restart-case
-			     (cl-telegram-bot/update::get-updates bot
+			     (cl-telegram-bot::get-updates bot
 								  :timeout 10)
-			   (cl-telegram-bot/update::continue-processing (&optional delay)
+			   (cl-telegram-bot::continue-processing (&optional delay)
 			     :report "Continue processing updates from Telegram"
 			     (when delay
 			       (sleep delay))
 			     ;; Return no updates
 			     (values)))
 	do (restart-case
-	       (cl-telegram-bot/update::process bot update)
-	     (cl-telegram-bot/update::continue-processing (&optional delay)
+	       (cl-telegram-bot::process bot update)
+	     (cl-telegram-bot::continue-processing (&optional delay)
 	       :report "Continue processing updates from Telegram"
 	       (when delay
 		 (sleep delay)))))))
