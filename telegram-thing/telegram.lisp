@@ -27,7 +27,7 @@
           (bordeaux-threads:make-thread
            (lambda ()
              (handler-bind ((error #'continue-processing-if-not-debug))
-               (cl-telegram-bot::process-updates bot)))
+               (process-updates bot)))
            :name "telegram-bot"))))
 
 
@@ -125,7 +125,7 @@
 
 (defparameter *output* *standard-output*)
 (defparameter *live-chats* nil)
-(defmethod cl-telegram-bot::process ((bot t) (update cl-telegram-bot::update))
+(defun process-one-update (bot update)
   "By default, just calls `process' on the payload."
   (log:debug "Processing update" update)
   (let* ((data (cl-telegram-bot::get-raw-data update))
@@ -143,9 +143,7 @@
 		readable-data)
 	 (mehfs '(:message :message_id)
 		readable-data)
-	 ))))
-  (let ((payload (cl-telegram-bot::get-payload update)))
-    (cl-telegram-bot::process bot payload)))
+	 )))))
 
 (defun mehf (item place)
   (let* ((value (load-time-value (gensym)))
@@ -166,7 +164,7 @@
 (defun boo ()
   (cl-telegram-bot))
 
-(defmethod cl-telegram-bot::process-updates ((bot t))
+(defun process-updates (bot)
   "Starts inifinite loop to process updates using long polling."
   (loop
      ;;(print "what" *output*)
@@ -191,7 +189,7 @@
 			     ;; Return no updates
 			     (values)))
 	do (restart-case
-	       (cl-telegram-bot::process bot update)
+	       (process-one-update bot update)
 	     (cl-telegram-bot::continue-processing (&optional delay)
 	       :report "Continue processing updates from Telegram"
 	       (when delay

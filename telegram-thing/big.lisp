@@ -23,25 +23,6 @@
 		(kebab:to-snake-case)
 		(alexandria:make-keyword)))
 
-;;;pipeline
-(defgeneric process (bot object)
-  (:documentation "This method is called by when processing a single update.
-                   It is called multiple times on different parts of an update.
-                   Whole pipeline looks like that:
-
-                   For each update we call:
-                     process(update)
-                     process(update.payload)
-                     For each entity in payload:
-                       process(entity)
-                   "))
-
-
-(defmethod process (bot object)
-  "By default, processing does nothing"
-  (declare (ignorable bot object))
-  (values))
-
 ;;;;Bot
 (defclass bot ()
   ((id
@@ -149,17 +130,16 @@
 
 (defun make-update (data)
   (let ((message-data (getf data :|message|)))
-    (if message-data
-        (make-instance 'update
-                       :id (getf data :|update_id|)
-                       :payload message-data ;;;FIXME
-                       :raw-data data)
-        (progn (log:warn "Received not supported update"
-                         data)
-               (make-instance 'update
-                              :id (getf data :|update_id|)
-                              :payload nil
-                              :raw-data data)))))
+    (flet ((make-thing (payload)
+	     (make-instance 'update
+			    :id (getf data :|update_id|)
+			    :payload payload
+			    :raw-data data)))
+      (if message-data
+	  (make-thing message-data)
+	  (progn (log:warn "Received not supported update"
+			   data)
+		 (make-thing nil))))))
 
 
 (defun get-updates (bot &key limit timeout)
@@ -184,37 +164,3 @@
                 (+ max-id 1))))
     
       (values updates))))
-
-
-;; Generics
-
-(defgeneric process-updates (bot)
-  (:documentation "By default, this method starts an infinite loop and fetching new updates using long polling."))
-
-
-(defmethod process-updates ((bot t))
-  "Starts inifinite loop to process updates using long polling."
-  (loop
-    do (loop for update in (restart-case
-                               (get-updates bot
-                                            :timeout 10)
-                             (continue-processing (&optional delay)
-                               :report "Continue processing updates from Telegram"
-                               (when delay
-                                 (sleep delay))
-                               ;; Return no updates
-                               (values)))
-             do (restart-case
-                    (process bot update)
-                  (continue-processing (&optional delay)
-                    :report "Continue processing updates from Telegram"
-                    (when delay
-                      (sleep delay)))))))
-
-
-(defmethod process ((bot t) (update update))
-  "By default, just calls `process' on the payload."
-  (log:debug "Processing update" update)
-  (let ((payload (get-payload update)))
-    (process bot payload)))
-
