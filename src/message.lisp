@@ -21,7 +21,7 @@
    #:make-message
    #:get-text
    #:get-raw-data
-   #:get-chat
+   #:message-chat
    #:get-entities
    #:message
    #:on-message
@@ -41,7 +41,7 @@
   ((text :initarg :text
          :reader get-text)
    (chat :initarg :chat
-         :reader get-chat)
+         :reader message-chat)
    (entities :initarg :entities
              :initform nil
              :reader get-entities)
@@ -68,7 +68,7 @@
     (format stream
             "text=~A chat=~A"
             (get-text message)
-            (get-chat message))))
+            (message-chat message))))
 
 
 (define-condition reply-immediately ()
@@ -137,7 +137,7 @@
         (log:debug "Replying to" *current-message*)
         (apply #'send-message
                *current-bot*
-               (get-chat *current-message*)
+               (message-chat *current-message*)
                (get-text condition)
                (get-rest-args condition)))))
   (values))
@@ -148,4 +148,4 @@
   (unless (boundp '*current-message*)
     (error "Seems (get-current-chat) was called outside of processing pipeline, because no current message is available."))
 
-  (get-chat *current-message*))
+  (message-chat *current-message*))
