@@ -218,5 +218,5 @@
   (cons 'progn
 	(mapcar
 	 (lambda (x)
-	   `(cl-telegram-bot/telegram-call::def-telegram-call ,@x))
+	   `(cl-telegram-bot/bindings::def-telegram-call ,@x))
 	 *functions*)))
